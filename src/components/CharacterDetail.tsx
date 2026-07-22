@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Heart, MessageCircle, BookOpen, MessageSquare, Send, Calendar, Trash2 } from 'lucide-react';
+import { X, Heart, MessageCircle, BookOpen, MessageSquare, Send, Calendar, Pencil, Check } from 'lucide-react';
 import { Character, Review } from '../types';
 
 interface CharacterDetailProps {
@@ -8,8 +8,8 @@ interface CharacterDetailProps {
   isFavorite: boolean;
   onToggleFavorite: (id: string) => void;
   onClose: () => void;
-  onAddReview: (characterId: string, name: string, rating: number, comment: string) => void;
-  onDeleteReview?: (characterId: string, reviewId: string) => void;
+  onAddReview: (characterId: string, name: string, rating: number, comment: string, reviewId?: string) => void;
+  onEditReview?: (characterId: string, reviewId: string, name: string, rating: number, comment: string) => void;
   initialTab?: 'plot' | 'reviews';
   onLinkClick?: () => void;
   index?: number;
@@ -21,17 +21,37 @@ export default function CharacterDetail({
   onToggleFavorite, 
   onClose, 
   onAddReview, 
-  onDeleteReview,
+  onEditReview,
   initialTab = 'plot',
   onLinkClick,
   index
 }: CharacterDetailProps) {
   const [activeTab, setActiveTab] = useState<'plot' | 'reviews'>(initialTab);
-  const [newReviewerName, setNewReviewerName] = useState('');
+  const [newReviewerName, setNewReviewerName] = useState(() => {
+    return localStorage.getItem('sodakem_author_name') || '';
+  });
   const [newRating, setNewRating] = useState(5);
   const [newComment, setNewComment] = useState('');
   const [formError, setFormError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState(false);
+
+  // Author tracking state (persisted in localStorage)
+  const [myReviewIds, setMyReviewIds] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('sodakem_my_review_ids') || '[]');
+    } catch {
+      return [];
+    }
+  });
+  const [savedAuthorName, setSavedAuthorName] = useState<string>(() => {
+    return localStorage.getItem('sodakem_author_name') || '';
+  });
+
+  // State for editing a specific review
+  const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editRating, setEditRating] = useState(5);
+  const [editComment, setEditComment] = useState('');
 
   const [floatingHearts, setFloatingHearts] = useState<{
     id: number;
@@ -58,6 +78,12 @@ export default function CharacterDetail({
     ? index % 2 === 1
     : (character.category.includes('Magic') || character.category.includes('Phép thuật') || character.category.includes('Đời thường') || character.category.includes('Slice'));
 
+  const isAuthorOfReview = (rev: Review) => {
+    if (myReviewIds.includes(rev.id)) return true;
+    if (savedAuthorName && rev.reviewerName.trim().toLowerCase() === savedAuthorName.trim().toLowerCase()) return true;
+    return false;
+  };
+
   const handleSubmitReview = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newReviewerName.trim()) {
@@ -69,13 +95,44 @@ export default function CharacterDetail({
       return;
     }
 
-    onAddReview(character.id, newReviewerName, newRating, newComment);
-    setNewReviewerName('');
-    setNewRating(5);
+    const reviewId = `rev-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    onAddReview(character.id, newReviewerName.trim(), newRating, newComment.trim(), reviewId);
+
+    // Persist author review ID & author name
+    const updatedIds = [...myReviewIds, reviewId];
+    setMyReviewIds(updatedIds);
+    localStorage.setItem('sodakem_my_review_ids', JSON.stringify(updatedIds));
+    localStorage.setItem('sodakem_author_name', newReviewerName.trim());
+    setSavedAuthorName(newReviewerName.trim());
+
     setNewComment('');
     setFormError('');
     setSubmitSuccess(true);
     setTimeout(() => setSubmitSuccess(false), 4000);
+  };
+
+  const handleStartEdit = (rev: Review) => {
+    setEditingReviewId(rev.id);
+    setEditName(rev.reviewerName);
+    setEditRating(rev.rating);
+    setEditComment(rev.comment);
+  };
+
+  const handleSaveEdit = (revId: string) => {
+    if (!editName.trim() || !editComment.trim()) return;
+    if (onEditReview) {
+      onEditReview(character.id, revId, editName.trim(), editRating, editComment.trim());
+    }
+
+    if (!myReviewIds.includes(revId)) {
+      const updated = [...myReviewIds, revId];
+      setMyReviewIds(updated);
+      localStorage.setItem('sodakem_my_review_ids', JSON.stringify(updated));
+    }
+    localStorage.setItem('sodakem_author_name', editName.trim());
+    setSavedAuthorName(editName.trim());
+
+    setEditingReviewId(null);
   };
 
   const formatDate = (dateStr: string) => {
@@ -369,59 +426,147 @@ export default function CharacterDetail({
                     character.reviews
                       .slice()
                       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                      .map((rev) => (
-                        <div
-                          key={rev.id}
-                          className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex gap-3"
-                        >
-                          {/* Cute avatar initial */}
-                          <div className="w-10 h-10 rounded-full bg-soda-pink-medium/30 border border-soda-pink-medium/60 flex items-center justify-center font-cute text-soda-brown text-base flex-shrink-0">
-                            {rev.reviewerName.charAt(0).toUpperCase()}
-                          </div>
+                      .map((rev) => {
+                        const isAuthor = isAuthorOfReview(rev);
+                        const isEditing = editingReviewId === rev.id;
 
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
-                              <h5 className="text-sm font-cute text-soda-brown truncate">
-                                {rev.reviewerName}
-                              </h5>
-                              <div className="flex items-center gap-1">
-                                <span className="flex gap-0.5">
-                                  {[1, 2, 3, 4, 5].map((heartNum) => (
-                                    <Heart
-                                      key={heartNum}
-                                      className={`w-3.5 h-3.5 ${
-                                        heartNum <= rev.rating
-                                          ? 'fill-rose-500 text-rose-500'
-                                          : 'text-rose-200'
-                                      }`}
-                                    />
-                                  ))}
-                                </span>
-                                <span className="text-[10px] text-gray-400 flex items-center gap-0.5 ml-1">
-                                  <Calendar className="w-2.5 h-2.5" />
-                                  {formatDate(rev.createdAt)}
-                                </span>
-                                {onDeleteReview && (
-                                  <button
-                                    onClick={() => {
-                                      if (window.confirm('Bạn có chắc muốn xóa feedback này?')) {
-                                        onDeleteReview(character.id, rev.id);
-                                      }
-                                    }}
-                                    title="Xóa feedback này"
-                                    className="p-1 rounded-full text-gray-400 hover:text-rose-500 hover:bg-rose-50 transition-colors ml-1 cursor-pointer"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                )}
+                        if (isEditing) {
+                          return (
+                            <div
+                              key={rev.id}
+                              className="bg-emerald-50/60 rounded-2xl p-4 border-2 border-emerald-300 shadow-sm space-y-3"
+                            >
+                              <div className="flex items-center justify-between border-b border-emerald-200 pb-2">
+                                <h5 className="text-xs font-cute text-emerald-800 font-bold flex items-center gap-1">
+                                  <Pencil className="w-3.5 h-3.5" />
+                                  Chỉnh sửa feedback của bạn
+                                </h5>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingReviewId(null)}
+                                  className="text-gray-400 hover:text-gray-600 text-xs font-cute"
+                                >
+                                  Hủy
+                                </button>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div>
+                                  <label className="block text-[11px] font-semibold text-gray-500 mb-0.5">Biệt danh</label>
+                                  <input
+                                    type="text"
+                                    value={editName}
+                                    onChange={(e) => setEditName(e.target.value)}
+                                    className="w-full text-xs bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-emerald-500"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-[11px] font-semibold text-rose-500 mb-0.5">Yêu thích</label>
+                                  <div className="flex items-center gap-1 h-[30px]">
+                                    {[1, 2, 3, 4, 5].map((hNum) => (
+                                      <button
+                                        key={hNum}
+                                        type="button"
+                                        onClick={() => setEditRating(hNum)}
+                                        className="p-0.5"
+                                      >
+                                        <Heart
+                                          className={`w-4 h-4 ${
+                                            hNum <= editRating
+                                              ? 'fill-rose-500 text-rose-500 scale-110'
+                                              : 'text-rose-200'
+                                          }`}
+                                        />
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="block text-[11px] font-semibold text-gray-500 mb-0.5">Feedback</label>
+                                <textarea
+                                  value={editComment}
+                                  onChange={(e) => setEditComment(e.target.value)}
+                                  rows={2}
+                                  className="w-full text-xs bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-emerald-500 resize-none"
+                                />
+                              </div>
+
+                              <div className="flex justify-end gap-2 pt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingReviewId(null)}
+                                  className="px-3 py-1 text-xs font-cute text-gray-600 hover:bg-gray-100 rounded-lg"
+                                >
+                                  Hủy
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSaveEdit(rev.id)}
+                                  className="flex items-center gap-1 px-3 py-1 text-xs font-cute text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm"
+                                >
+                                  <Check className="w-3.5 h-3.5" />
+                                  Lưu chỉnh sửa
+                                </button>
                               </div>
                             </div>
-                            <p className="text-gray-600 text-xs leading-relaxed break-words">
-                              {rev.comment}
-                            </p>
+                          );
+                        }
+
+                        return (
+                          <div
+                            key={rev.id}
+                            className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex gap-3"
+                          >
+                            {/* Cute avatar initial */}
+                            <div className="w-10 h-10 rounded-full bg-soda-pink-medium/30 border border-soda-pink-medium/60 flex items-center justify-center font-cute text-soda-brown text-base flex-shrink-0">
+                              {rev.reviewerName.charAt(0).toUpperCase()}
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
+                                <h5 className="text-sm font-cute text-soda-brown truncate">
+                                  {rev.reviewerName}
+                                </h5>
+                                <div className="flex items-center gap-1">
+                                  <span className="flex gap-0.5">
+                                    {[1, 2, 3, 4, 5].map((heartNum) => (
+                                      <Heart
+                                        key={heartNum}
+                                        className={`w-3.5 h-3.5 ${
+                                          heartNum <= rev.rating
+                                            ? 'fill-rose-500 text-rose-500'
+                                            : 'text-rose-200'
+                                        }`}
+                                      />
+                                    ))}
+                                  </span>
+                                  <span className="text-[10px] text-gray-400 flex items-center gap-0.5 ml-1">
+                                    <Calendar className="w-2.5 h-2.5" />
+                                    {formatDate(rev.createdAt)}
+                                  </span>
+
+                                  {/* Only author can edit their feedback */}
+                                  {isAuthor && (
+                                    <button
+                                      onClick={() => handleStartEdit(rev)}
+                                      title="Chỉnh sửa feedback của bạn"
+                                      className="flex items-center gap-1 text-[11px] font-cute text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-lg border border-emerald-200 transition-colors ml-1 cursor-pointer"
+                                    >
+                                      <Pencil className="w-3 h-3" />
+                                      <span>Sửa</span>
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                              <p className="text-gray-600 text-xs leading-relaxed break-words">
+                                {rev.comment}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      ))
+                        );
+                      })
                   )}
                 </div>
 

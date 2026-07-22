@@ -38,21 +38,30 @@ function writeJsonFile<T>(filePath: string, data: T): void {
   }
 }
 
-// Ensure default stats file with initial count 67
-if (!fs.existsSync(STATS_FILE)) {
-  writeJsonFile(STATS_FILE, { count: 67 });
+// Ensure stats file starts from at least 473
+const currentStats = readJsonFile<{ count: number }>(STATS_FILE, { count: 473 });
+if (currentStats.count < 473) {
+  currentStats.count = 473;
 }
+writeJsonFile(STATS_FILE, currentStats);
 
 // API Routes
 
 // 1. Visitor Count APIs
 app.get('/api/visitor-count', (req, res) => {
-  const stats = readJsonFile<{ count: number }>(STATS_FILE, { count: 67 });
+  const stats = readJsonFile<{ count: number }>(STATS_FILE, { count: 473 });
+  if (stats.count < 473) {
+    stats.count = 473;
+    writeJsonFile(STATS_FILE, stats);
+  }
   res.json(stats);
 });
 
 app.post('/api/visitor-count/increment', (req, res) => {
-  const stats = readJsonFile<{ count: number }>(STATS_FILE, { count: 67 });
+  const stats = readJsonFile<{ count: number }>(STATS_FILE, { count: 473 });
+  if (stats.count < 473) {
+    stats.count = 473;
+  }
   stats.count += 1;
   writeJsonFile(STATS_FILE, stats);
   res.json(stats);
@@ -79,11 +88,23 @@ app.post('/api/reviews', (req, res) => {
   res.json({ success: true, reviews: reviews[characterId] });
 });
 
-app.delete('/api/reviews/:characterId/:reviewId', (req, res) => {
+app.put('/api/reviews/:characterId/:reviewId', (req, res) => {
   const { characterId, reviewId } = req.params;
+  const { reviewerName, rating, comment } = req.body;
   const reviews = readJsonFile<Record<string, any[]>>(REVIEWS_FILE, {});
   if (reviews[characterId]) {
-    reviews[characterId] = reviews[characterId].filter((r: any) => r.id !== reviewId);
+    reviews[characterId] = reviews[characterId].map((r: any) => {
+      if (r.id === reviewId) {
+        return {
+          ...r,
+          reviewerName: reviewerName || r.reviewerName,
+          rating: typeof rating === 'number' ? rating : r.rating,
+          comment: comment !== undefined ? comment : r.comment,
+          updatedAt: new Date().toISOString()
+        };
+      }
+      return r;
+    });
     writeJsonFile(REVIEWS_FILE, reviews);
   }
   res.json({ success: true, reviews: reviews[characterId] || [] });

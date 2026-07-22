@@ -74,7 +74,7 @@ export default function App() {
   });
 
   // Visitor Count State
-  const [visitorCount, setVisitorCount] = useState<number>(67);
+  const [visitorCount, setVisitorCount] = useState<number>(473);
 
   // Fetch visitor count from server
   const fetchVisitorCount = async () => {
@@ -474,9 +474,9 @@ export default function App() {
   }, []);
 
   // Handle adding a review
-  const handleAddReview = async (characterId: string, reviewerName: string, rating: number, comment: string) => {
+  const handleAddReview = async (characterId: string, reviewerName: string, rating: number, comment: string, customId?: string) => {
     const newReview: Review = {
-      id: `rev-${Date.now()}`,
+      id: customId || `rev-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       characterId,
       reviewerName,
       rating,
@@ -520,22 +520,35 @@ export default function App() {
     saveCharacters(updatedCharacters);
   };
 
-  // Handle deleting a review
-  const handleDeleteReview = async (characterId: string, reviewId: string) => {
+  // Handle editing a review
+  const handleEditReview = async (characterId: string, reviewId: string, reviewerName: string, rating: number, comment: string) => {
     try {
       await fetch(`/api/reviews/${characterId}/${reviewId}`, {
-        method: 'DELETE'
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reviewerName, rating, comment })
       });
     } catch (err) {
-      console.error('Failed to delete review from server:', err);
+      console.error('Failed to edit review on server:', err);
     }
 
     const updatedCharacters = characters.map(char => {
       if (char.id === characterId) {
-        const updatedReviews = char.reviews.filter(r => r.id !== reviewId);
+        const updatedReviews = char.reviews.map(r => {
+          if (r.id === reviewId) {
+            return {
+              ...r,
+              reviewerName,
+              rating,
+              comment,
+              updatedAt: new Date().toISOString()
+            };
+          }
+          return r;
+        });
         const sumRating = updatedReviews.reduce((sum, r) => sum + r.rating, 0);
         const avgRating = updatedReviews.length > 0 ? sumRating / updatedReviews.length : 5.0;
-        
+
         const updatedChar = {
           ...char,
           reviews: updatedReviews,
@@ -1082,7 +1095,7 @@ export default function App() {
             initialTab={detailTab}
             onClose={() => setSelectedCharacter(null)}
             onAddReview={handleAddReview}
-            onDeleteReview={handleDeleteReview}
+            onEditReview={handleEditReview}
             index={characters.findIndex(c => c.id === selectedCharacter.id)}
           />
         )}
