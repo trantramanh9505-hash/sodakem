@@ -1,0 +1,201 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Nunito:wght@400..900&family=Pacifico&family=Quicksand:wght@400..700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Nunito", "Quicksand", "Fredoka", ui-sans-serif, system-ui, sans-serif;
+  --font-cursive: "Pacifico", cursive;
+  
+  /* Soda Kem Pastel Palette & Bento styles */
+  --color-soda-pink: #FFEBF0;
+  --color-soda-pink-medium: #FFC2CD;
+  --color-soda-pink-dark: #FF7B94;
+  --color-soda-green: #E8F9F5;
+  --color-soda-green-medium: #B2F2E3;
+  --color-soda-green-dark: #37BFA1;
+  --color-soda-cream: #FFFDF9;
+  --color-soda-brown: #6D4C41;
+  
+  /* Bento theme colors */
+  --color-bento-bg: #FFF0F5;
+  --color-bento-pink-soft: #FFF5F7;
+  --color-bento-green-soft: #F0FAF7;
+}
+
+/* Custom scrollbar to look rounded and pastel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-soda-pink);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-soda-green-medium);
+  border-radius: 999px;
+  border: 2px solid var(--color-soda-pink);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-soda-green-dark);
+}
+
+body {
+  color: #4A3E3D;
+  font-family: "Quicksand", "Fredoka", sans-serif;
+  overflow-x: hidden;
+}
+
+/* Bento aesthetic custom styles */
+.bento-card {
+  background-color: #FFFFFF;
+  border-radius: 32px;
+  border: 4px solid #FFFFFF;
+  box-shadow: 0 10px 30px -10px rgba(225, 120, 150, 0.15);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.bento-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px -5px rgba(225, 120, 150, 0.25);
+}
+
+.bento-card-large {
+  background-color: #FFFFFF;
+  border-radius: 40px;
+  border: 8px solid #FFF5F7;
+  box-shadow: 0 15px 40px -12px rgba(225, 120, 150, 0.18);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.bento-card-large:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 45px -8px rgba(225, 120, 150, 0.28);
+}
+
+/* Sparkles or soft shadow style */
+.bubbly-shadow {
+  box-shadow: 0 8px 0px 0px #FFC2CD;
+}
+
+.bubbly-shadow-green {
+  box-shadow: 0 8px 0px 0px #B2F2E3;
+}
+
+.bubbly-shadow-sm {
+  box-shadow: 0 4px 0px 0px #FFC2CD;
+}
+
+.bubbly-shadow-sm-green {
+  box-shadow: 0 4px 0px 0px #B2F2E3;
+}
+
+.font-cute {
+  font-family: "Nunito", "Quicksand", "Fredoka", sans-serif;
+  font-weight: 700;
+}
+
+.font-logo {
+  font-family: "Pacifico", cursive;
+}
+
+/* Animated Polka Dots Background */
+.animated-dots-bg {
+  background-color: #FFF0F5; /* Pastel Pink background */
+  background-image: 
+    radial-gradient(#B2F2E3 16%, transparent 17%),
+    radial-gradient(#B2F2E3 16%, transparent 17%);
+  background-size: 44px 44px;
+  background-position: 0 0, 22px 22px;
+  animation: slide-dots-down 16s linear infinite;
+}
+
+@keyframes slide-dots-down {
+  0% {
+    background-position: 0 0, 22px 22px;
+  }
+  100% {
+    background-position: 0 44px, 22px 66px;
+  }
+}
+
+/* Dark Mode Overrides */
+html.dark .animated-dots-bg {
+  background-color: #1a1625;
+  background-image: 
+    radial-gradient(#2d2238 16%, transparent 17%),
+    radial-gradient(#2d2238 16%, transparent 17%);
+}
+
+html.dark body {
+  color: #e2d8f0;
+}
+
+html.dark .bg-white, html.dark .bg-white\/70, html.dark .bg-white\/40, html.dark .bg-white\/30, html.dark .bg-white\/80 {
+  background-color: rgba(31, 27, 46, 0.8) !important;
+  border-color: #3b2e50 !important;
+}
+
+html.dark .text-slate-700, html.dark .text-gray-500, html.dark .text-gray-600, html.dark .text-gray-700 {
+  color: #c7b8de !important;
+}
+
+html.dark .bento-card {
+  background-color: #1f1b2e !important;
+  border-color: #2d2440 !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5) !important;
+}
+
+html.dark .bento-card-large {
+  background-color: #1f1b2e !important;
+  border-color: #2d2440 !important;
+  box-shadow: 0 15px 40px -12px rgba(0, 0, 0, 0.5) !important;
+}
+
+html.dark .bg-pink-50, html.dark .bg-emerald-50, html.dark .bg-gray-50, html.dark .bg-gray-100 {
+  background-color: rgba(45, 34, 56, 0.6) !important;
+  border-color: rgba(59, 46, 80, 0.8) !important;
+}
+
+html.dark .border-pink-100, html.dark .border-pink-200, html.dark .border-emerald-200, html.dark .border-white\/50, html.dark .border-gray-100 {
+  border-color: #3b2e50 !important;
+}
+
+html.dark .text-pink-700, html.dark .text-emerald-700, html.dark .text-soda-pink-dark {
+  color: #ff9fb3 !important;
+}
+
+html.dark .bg-pink-200 {
+  background-color: #613446 !important;
+  color: #ff9fb3 !important;
+}
+
+html.dark .bg-emerald-200 {
+  background-color: #2a5246 !important;
+  color: #82e2c6 !important;
+}
+
+html.dark .text-pink-500 {
+  color: #ff789c !important;
+}
+
+html.dark .text-soda-brown {
+  color: #FFFDF9 !important;
+}
+
+/* Beautiful Pastel Green Checkered Pattern (Caro xanh lá pastel) */
+.caro-green-pastel-bg {
+  background-color: #F0FAF7 !important;
+  background-image: 
+    linear-gradient(90deg, rgba(55, 191, 161, 0.15) 2px, transparent 2px),
+    linear-gradient(rgba(55, 191, 161, 0.15) 2px, transparent 2px) !important;
+  background-size: 24px 24px;
+}
+
+html.dark .caro-green-pastel-bg {
+  background-color: #141f1c !important;
+  background-image: 
+    linear-gradient(90deg, rgba(55, 191, 161, 0.12) 2px, transparent 2px),
+    linear-gradient(rgba(55, 191, 161, 0.12) 2px, transparent 2px) !important;
+}
+
+

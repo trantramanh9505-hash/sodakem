@@ -1,0 +1,6 @@
+{
+  "name": "Soda Kem",
+  "description": "Thế giới nhân vật roleplay ngọt ngào phong cách pastel hồng và xanh lá.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
